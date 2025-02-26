@@ -1,0 +1,138 @@
+Project:
+	Integrate the a poll server connection that will allow for connections to automatically connected
+
+
+-----------------------------------------------------------------------------------------
+
+Saved the Makefile 02_12_25
+
+TARGET_SRV = bin/dbserver
+TARGET_CLI = bin/dbcli
+SRC_SRV = $(wildcard src/srv/*.c)
+OBJ_SRV = $(SRC_SRV:src/srv/%.c=obj/srv/%.o)
+
+SRC_CLI = $(wildcard src/cli/*.c)
+OBJ_CLI = $(SRC_CLI:src/cli/%.c=obj/cli/%.o)
+
+run: clean default
+	./$(TARGET_SRV) -f ./mynewdb.db -n -p 8080
+
+default: $(TARGET_SRV) $(TARGET_CLI)
+
+clean:
+	rm -f obj/srv/*.o
+	rm -f bin/*
+	rm -f *.db
+
+$(TARGET_SRV): $(OBJ_SRV)
+	gcc -o $@ $?
+
+$(OBJ_SRV): obj/srv/%.o: src/srv/%.c
+	gcc -c $< -o $@ -Iinclude
+
+$(TARGET_CLI): $(OBJ_CLI)
+	gcc -o $@ $?
+
+$(OBJ_CLI): obj/cli/%.o: src/cli/%.clean
+	gcc -c $< -o $@ -Iinclude
+
+-Makefile backup 02_20_25
+
+TARGET_SRV = bin/dbserver
+TARGET_CLI = bin/dbcli
+
+SRC_SRV = $(wildcard src/srv/*.c)
+OBJ_SRV = $(SRC_SRV:src/srv/%.c=obj/srv/%.o)
+
+SRC_CLI = $(wildcard src/cli/*.c)
+OBJ_CLI = $(SRC_CLI:src/cli/%.c=obj/cli/%.o)
+
+run: clean default
+	./$(TARGET_SRV) -f ./mynewdb.db -n -p 8080
+
+default: $(TARGET_SRV) $(TARGET_CLI)
+
+clean:
+	rm -f obj/srv/*.o
+	rm -f bin/*
+	rm -f *.db
+
+$(TARGET_SRV): $(OBJ_SRV) 
+	gcc -o $@ $(OBJ_SRV) -Iinclude
+
+$(TARGET_CLI): $(OBJ_CLI)
+	gcc -o $@ $(OBJ_CLI) -Iinclude
+
+$(OBJ_SRV): obj/srv/%.o: src/srv/%.c
+	gcc -c $< -o $@ -Iinclude
+
+$(OBJ_CLI): obj/cli/%.o: src/cli/%.c
+	gcc -c $< -o $@ -Iinclude
+
+
+----------------------------------------------------------------------------------------
+
+02_20_25
+-Moved srvpoll.c into src/srv and srvpoll.h into include,
+-Commented out srvpoll.c and srvpoll.h from the main.c,
+-Uncommented the #include and #define import statements for srvpoll.h,
+-Backed up Makefile,
+-Removed CLI target from Makefile,
+-Compiled with error listed in error section,
+
+
+02_24_25
+-Added to src/srv/srvpoll.c void handle_client_fsm(...),
+-Added to src/srv/srvpoll.c #include <poll.h> and #include "common.h",
+-Added to include/srvpoll.h #include "parse.h",
+
+02_25_25
+-Added to src/srv/srvpoll.c added function void handle_client_fsm(...) {...},
+-Added to include/srvpoll.h typedef enum {..., STATE_HELLO, STATE_MSG, STATE_GOODBYE} state_e,
+-Added to include/srvpoll.h void handle_client_fsm(...),
+-Added to include/common.h <stdint.h>,
+-Added to include/common.h typedef enum {MSG_HELLO_REQ, MSG_HELLO_RESP, ...},
+
+02_26_25
+-Uncommented from src/srv/main.c poll_loop(...) { for(...) { if {...} else{handle_client_fsm(...)}}},
+-Commented from src/srv/main.c poll_loop(...) { for(...) {if {...} else{printf(...)}}},
+-Added to src/srv/srvpoll.c void handle_client_fsm() {if (client->state == STATE_HELLO) {...}},
+-Added to src/cli/main.c #include import statements,
+
+----------------------------------------------------------------------------------------
+Errors
+02_20_25
+richard_vest@LAPTOP-LC92FEIF:~/projects_windows/network/network-final$ make
+rm -f obj/srv/*.o
+rm -f bin/*
+rm -f *.db
+gcc -c src/srv/file.c -o obj/srv/file.o -Iinclude
+gcc -c src/srv/main.c -o obj/srv/main.o -Iinclude
+gcc -c src/srv/parse.c -o obj/srv/parse.o -Iinclude
+src/srv/parse.c: In function ‘read_employees’:
+src/srv/parse.c:55:19: warning: comparison between pointer and integer
+   55 |     if (employees == -1) {
+      |                   ^~
+In file included from src/srv/parse.c:11:
+src/srv/parse.c: In function ‘output_file’:
+include/common.h:4:24: warning: ‘return’ with a value, in function returning void
+    4 | #define STATUS_ERROR   -1
+      |                        ^
+src/srv/parse.c:75:16: note: in expansion of macro ‘STATUS_ERROR’
+   75 |         return STATUS_ERROR;
+      |                ^~~~~~~~~~~~
+src/srv/parse.c:72:6: note: declared here
+   72 | void output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) {
+      |      ^~~~~~~~~~~
+gcc -c src/srv/srvpoll.c -o obj/srv/srvpoll.o -Iinclude
+gcc -o bin/dbserver obj/srv/file.o obj/srv/main.o obj/srv/parse.o obj/srv/srvpoll.o -Iinclude
+./bin/dbserver -f ./mynewdb.db -n -p 8080
+Middle of create_db_header:3
+Create db_header structure values:
+Version:1
+Count:0
+Magic Number:0X4c4c4144
+Filesize:12
+Create db header function completed successfully 0
+socket: No such file or directory
+make: *** [Makefile:7: run] Error 1
