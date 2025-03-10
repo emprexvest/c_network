@@ -3,13 +3,16 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "common.h"
 
 void send_hello(int fd) {
     char buf[4096] = {0};
 
-    dbproto_hdr_t *hdr = buf;
+    // Removed for debugging
+    // dbproto_hdr_t *hdr = buf;
+    dbproto_hdr_t *hdr = (dbproto_hdr_t *)buf;
     hdr->type = MSG_HELLO_REQ;
     hdr->len = 1;
 
@@ -30,8 +33,10 @@ int main(int argc, char *argv[]) {
 
     struct sockaddr_in serverInfo = {0};
 
-    serverInfo.sin_family - AF_INET;
-    serverInfo.sin_addr.s_addr = in6_addr(argv[1]);
+    serverInfo.sin_family = AF_INET;
+    serverInfo.sin_addr.s_addr = inet_addr(argv[1]);
+    // Removed for debugging
+    // serverInfo.sin_addr.s_addr = in6_addr(argv[1]);
     serverInfo.sin_port = htons(8080);
 
     int fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -40,7 +45,9 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    if (connect(fd, (struct socketaddr*)&serverInfo, sizeof(serverInfo)) == -1) {
+    // Removed for debugging
+    // if (connect(fd, (struct socketaddr*)&serverInfo, sizeof(serverInfo)) == -1) {
+    if (connect(fd, (struct sockaddr*)&serverInfo, sizeof(serverInfo)) == -1) {
         perror("connect");
         close(fd);
         return 0;
