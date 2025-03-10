@@ -98,6 +98,39 @@ $(OBJ_CLI): obj/cli/%.o: src/cli/%.c
 -Commented from src/srv/main.c poll_loop(...) { for(...) {if {...} else{printf(...)}}},
 -Added to src/srv/srvpoll.c void handle_client_fsm() {if (client->state == STATE_HELLO) {...}},
 -Added to src/cli/main.c #include import statements,
+-Added to src/cli/main.c     if (argc != 2) {...}
+
+03_05_35
+-Backed up Makefile into notes/Makefile,
+-Updated Makefile from notes 02_12_25,
+-Updated Makefile to previous script,
+-Updated Makefile TARGET_CLI = bin/dbcli
+
+03_06_25
+-Updated Makefile default: $(TARGET_SRV) $(TARGET_CLI)
+
+03_07_25
+-Updated Makefile removed clean from run: default,
+-Updated Makefile fixed typo OBJ_CLI = $(SRC_CLI:src/cli/%.c=obk/cli/%.o) to OBJ_CLI = $(SRC_CLI:src/cli/%.c=obj/cli/%.o),
+-Updated Makefile moved $(OBJ_SRV): obj/srv/%.o: src/srv/%.c gcc -c $< -o $@ -Iinclude to the bottom of the Makefile,
+-Updated Makefile clean: 	rm -f obj/cli/*.o,
+
+03_10_25
+-Updated Makefile removed bin/dbserver: src/cli/main.c
+	@echo "Error: Cannot build bin/dbserver from src/cli/main.c directly."
+	@exit 1,
+-Commented out from src/cli/main.c // serverInfo.sin_addr.s_addr = in6_addr(argv[1]);,
+-Updated src/cli/main.c serverInfo.sin_addr.s_addr = inet_addr(argv[1]);
+-Commented out from src/cli/main.c // if (connect(fd, (struct socketaddr*)&serverInfo, sizeof(serverInfo)) == -1) {,
+-Updated src/cli/main.c if (connect(fd, (struct sockaddr*)&serverInfo, sizeof(serverInfo)) == -1) {,
+-Commented out from src/cli/main.c dbproto_hdr_t *hdr = buf;,
+-Updated src/cli/main.c dbproto_hdr_t *hdr = (dbproto_hdr_t *)buf;
+
+
+
+
+
+
 
 ----------------------------------------------------------------------------------------
 Errors
