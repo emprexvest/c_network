@@ -158,7 +158,9 @@ int create_db_header(int fd, struct dbheader_t **headerOut) {
 
     header->version = 0x1;
     header->count = 0;
-    header->magic = HEADER_MAGIC;
+    // Removed for debugging
+    // header->magic = HEADER_MAGIC;
+    header->magic = htonl(HEADER_MAGIC);
     header->filesize = sizeof(struct dbheader_t);
 
     *headerOut = header;
