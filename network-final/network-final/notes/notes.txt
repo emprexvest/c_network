@@ -126,6 +126,10 @@ $(OBJ_CLI): obj/cli/%.o: src/cli/%.c
 -Commented out from src/cli/main.c dbproto_hdr_t *hdr = buf;,
 -Updated src/cli/main.c dbproto_hdr_t *hdr = (dbproto_hdr_t *)buf;
 
+03_12_25
+-Commented out from src/srv/parse.c header->magic = HEADER_MAGIC;,
+-Updated src/srv/parse.c header->magic = htonl(HEADER_MAGIC);,
+
 
 
 
