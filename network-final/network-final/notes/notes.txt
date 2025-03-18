@@ -130,6 +130,28 @@ $(OBJ_CLI): obj/cli/%.o: src/cli/%.c
 -Commented out from src/srv/parse.c header->magic = HEADER_MAGIC;,
 -Updated src/srv/parse.c header->magic = htonl(HEADER_MAGIC);,
 
+03_14_25
+Commented out from src/srv/parse.c dbhdr->version = htons(dbhdr->version);,
+Updated src/srv/parse.c dbhdr->version = htons(dbhdr->version); to dbhdr->version = ntohs(dbhdr->version);,
+Removed from src/srv/parse.c dbhdr->version = ntohs(dbhdr->version); it did not fix failed open_file() bug,
+Commented out from src/srv/parse.c dbhdr->count = htons(dbhdr->count); dbhdr->version = htons(dbhdr->version);,
+
+03_18_25
+Commented out from include/parse.h struct dbheader_t {...},
+Updated include/parse.h struct dbheader_t { uint32_t magic; ...},
+Commented out include/parse.h dbheader_t { uint32_t magic; ...},
+Updated include/parse.h struct dbheader_t {...},
+Updated src/srv/parse.c validate_db_header() { printf(Version after ntohs:...); ...},
+Updated src/srv/parse.c validate_db_header() { printf(Version before ntohs...)},
+Updated src/srv/parse.c validate_db_header() { printf(Version after ntohs...)},
+Commented out src/srv/parse.c create_db_header() { header->version = 0x1;...},
+Updated src/srv/parse.c create_db_header() { header->version = htons(0x1)};,
+Updated src/srv/parse.c #include <inttypes.h>,
+Updated src/srv/parse.c printf("dbstat.st_size %" PRId64 "\n", (int64_t)dbstat.st_size );,
+
+
+
+
 
 
 

@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
+// Added for debugging
+#include <inttypes.h>
 
 #include "parse.h"
 #include "common.h"
@@ -79,8 +81,10 @@ void output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees)
 
     dbhdr->magic = htonl(dbhdr->magic);
     dbhdr->filesize = htonl(sizeof(struct dbheader_t) + (sizeof(struct employee_t) * realcount));
-    dbhdr->count = htons(dbhdr->count);
-    dbhdr->version = htons(dbhdr->version);
+    // Removed for debugging
+    // dbhdr->count = htons(dbhdr->count);
+    // dbhdr->version = htons(dbhdr->version);
+
 
     printf("Middle of output_file function FD:%d\n", fd);
     
@@ -118,8 +122,18 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
 
     header->magic = ntohl(header->magic);
     header->filesize = ntohl(header->filesize);
+
+    // Debug check before network btye conversion
+    printf("Version before ntohs: %u\n", header->version);
+
     header->version = ntohs(header->version);
+
+    // Debug check after network byte conversion
+    printf("Version after ntohs: %u\n", header->version);
+    printf("Size of dbheader_t: %zu\n", sizeof(struct dbheader_t));
+
     header->count = ntohs(header->count);
+
 
     if(header->magic != HEADER_MAGIC) {
         printf("Improper header magic\n");
@@ -135,6 +149,9 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
 
     struct stat dbstat = {0};
     fstat(fd, &dbstat);
+    // Added for debugging
+    printf("dbstat.st_size %" PRId64 "\n", (int64_t)dbstat.st_size);
+
     if(header->filesize != dbstat.st_size) {
         printf("Corrupted database\n");
         free(header);
@@ -156,7 +173,10 @@ int create_db_header(int fd, struct dbheader_t **headerOut) {
 
     printf("Middle of create_db_header:%d\n", fd);
 
-    header->version = 0x1;
+
+    // Removed for deubgging
+    // header->version = 0x1;
+    header->version = htons(0x1);
     header->count = 0;
     // Removed for debugging
     // header->magic = HEADER_MAGIC;

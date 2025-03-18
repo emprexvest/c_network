@@ -1,8 +1,9 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-#define HEADER_MAGIC 0x4c4c4144
+#include <stdint.h>
 
+#define HEADER_MAGIC 0x4c4c4144
 
 struct dbheader_t {
 	unsigned int magic;
@@ -10,6 +11,14 @@ struct dbheader_t {
 	unsigned short version;
 	unsigned short count;
 };
+
+// Added for debugging please remove later
+// struct dbheader_t {
+// 	uint32_t magic;
+// 	uint32_t filesize;
+// 	uint16_t version;
+// 	uint16_t count;
+// };
 
 struct employee_t {
 	char name[256];
