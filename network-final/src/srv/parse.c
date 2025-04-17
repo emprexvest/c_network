@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
+// Added for debugging
+#include <inttypes.h>
 
 #include "parse.h"
 #include "common.h"
@@ -77,22 +79,72 @@ void output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees)
 
     int realcount = dbhdr->count;
 
+    // Removed for debugging
+    // dbhdr->magic = htonl(dbhdr->magic);
+    // dbhdr->magic = ntohl(dbhdr->magic);
+    // Added for debugging
+    printf("Magic Number Middle of output_file():0X%0x\n", dbhdr->magic);
+
+
+    // Removed for debugging
+    // dbhdr->filesize = htonl(sizeof(struct dbheader_t) + (sizeof(struct employee_t) * realcount));
+    // Removed for debugging
+    // dbhdr->count = htons(dbhdr->count);
+    // dbhdr->version = htons(dbhdr->version);
+
+    // Added for debugging
     dbhdr->magic = htonl(dbhdr->magic);
-    dbhdr->filesize = htonl(sizeof(struct dbheader_t) + (sizeof(struct employee_t) * realcount));
-    dbhdr->count = htons(dbhdr->count);
+    dbhdr->filesize = htonl(dbhdr->filesize);
     dbhdr->version = htons(dbhdr->version);
+    dbhdr->count = htons(dbhdr->count);
+
+    printf("Magic Number after ntohl conversion output_file():0X%0x\n", dbhdr->magic);
+
+
 
     printf("Middle of output_file function FD:%d\n", fd);
     
+    // Seek to the beginning of the file
     lseek(fd, 0, SEEK_SET);
 
+    // Write the header
     write(fd, dbhdr, sizeof(struct dbheader_t));
 
+
+    // Write the employee records
     int i = 0;
     for (; i < realcount; i++) {
         employees[i].hours = htonl(employees[i].hours);
         write(fd, &employees[i], sizeof(struct employee_t));
     }
+
+    // Get actual file size after writing
+    struct stat dbstat = {0};
+    fstat(fd, &dbstat);
+
+
+    // Added for debugging
+    dbhdr->filesize = dbstat.st_size;
+
+    // Update the filesize in the dbhdr struct
+    dbhdr->filesize = htonl(dbstat.st_size);
+
+    // Seek back to the beginning of the file to write the updated header
+    lseek(fd, 0, SEEK_SET);
+
+    // Write the header again with the updated file size
+    write(fd, dbhdr, sizeof(struct dbheader_t));
+
+
+
+    // Added for debugging
+    printf("dbstat.st_size output_file() %" PRId64 "\n", (int64_t)dbstat.st_size);
+
+    // Added for debugging
+    printf("filesize before if check output_file() %u\n", dbhdr->filesize);
+
+    printf("Magic Number after lseek() and write() output_file():0X%0x\n", dbhdr->magic);
+
 
     return;
 }	
@@ -116,25 +168,89 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
         return STATUS_ERROR;
     }
 
+    // Added for debugging
     header->magic = ntohl(header->magic);
     header->filesize = ntohl(header->filesize);
     header->version = ntohs(header->version);
     header->count = ntohs(header->count);
 
-    if(header->magic != HEADER_MAGIC) {
+    // Removed for debugging
+    // header->magic = ntohl(header->magic);
+
+    // Added for debugging
+    // header->magic = ntohl(header->magic);
+
+    // Removed for debugging
+    // header->filesize = ntohl(header->filesize);
+    // header->filesize = header->filesize;
+    
+
+    // Debug check before network btye conversion
+    printf("Version before ntohs: %u\n", header->version);
+
+    // Removed for debugging
+    // header->version = ntohs(header->version);
+
+    // Debug check after network byte conversion
+    printf("Version after ntohs: %u\n", header->version);
+    printf("Size of dbheader_t: %zu\n", sizeof(struct dbheader_t));
+
+    // Removed for debugging
+    // header->count = ntohs(header->count);
+
+    printf("Magic Number validate_db_header before if header->magic :0X%0x\n", header->magic);
+
+    // Removed for debugging
+    // if(header->magic != HEADER_MAGIC) {
+    //     printf("Improper header magic\n");
+    //     free(header);
+    //     return -1;
+    // }
+
+
+    if(header->magic != ntohl(HEADER_MAGIC)) {
         printf("Improper header magic\n");
         free(header);
         return -1;
     }
 
-    if(header->version != 1) {
+    printf("Magic Number validate_db_header after if header->magic :0X%0x\n", header->magic);
+
+    // Removed for debugging
+    // if(header->version != 1) {
+    //     printf("Improper header version\n");
+    //     free(header);
+    //     return -1;
+    // }
+
+    // Added for debugging
+    // if(header->version != 256) {
+    //     printf("Improper header version\n");
+    //     free(header);
+    //     return -1;
+    // }
+
+    // Added for debugging
+    if(header->version != ntohs(1)) {
         printf("Improper header version\n");
         free(header);
         return -1;
     }
 
+    // Get actual file size
     struct stat dbstat = {0};
-    fstat(fd, &dbstat);
+    if(fstat(fd, &dbstat) == -1) {
+        perror("fstat");
+        free(header);
+        return -1;
+    }
+
+    // Added for debugging
+    printf("dbstat.st_size %" PRId64 "\n", (int64_t)dbstat.st_size);
+
+    // Added for debugging
+    printf("filesize before if check %u\n", header->filesize);
+
     if(header->filesize != dbstat.st_size) {
         printf("Corrupted database\n");
         free(header);
@@ -156,10 +272,21 @@ int create_db_header(int fd, struct dbheader_t **headerOut) {
 
     printf("Middle of create_db_header:%d\n", fd);
 
-    header->version = 0x1;
-    header->count = 0;
-    header->magic = HEADER_MAGIC;
-    header->filesize = sizeof(struct dbheader_t);
+    // Added for debugging
+    header->version = htons(0x1);
+    header->count = htons(0);
+    header->magic = htonl(HEADER_MAGIC);
+    header->filesize = htonl(sizeof(struct dbheader_t));
+
+
+    // Removed for deubgging
+    // header->version = 0x1;
+    // header->version = htons(0x1);
+    // header->count = 0;
+    // Removed for debugging
+    // header->magic = HEADER_MAGIC;
+    // header->magic = htonl(HEADER_MAGIC);
+    // header->filesize = sizeof(struct dbheader_t);
 
     *headerOut = header;
 
@@ -175,11 +302,20 @@ int create_db_header(int fd, struct dbheader_t **headerOut) {
         return STATUS_ERROR;
     }
 
+    // Removed for debugging
+    // printf("Create db_header structure values:\n");
+    // printf("Version:%d\n", header->version);
+    // printf("Count:%d\n", header->count);
+    // printf("Magic Number:0X%0x\n",header->magic);
+    // printf("Filesize:%d\n", header->filesize);
+
+    // Added for debugging
     printf("Create db_header structure values:\n");
-    printf("Version:%d\n", header->version);
-    printf("Count:%d\n", header->count);
-    printf("Magic Number:0X%0x\n",header->magic);
-    printf("Filesize:%d\n", header->filesize);
+    printf("Version:%d\n", ntohs(header->version));
+    printf("Count:%d\n", ntohs(header->count));
+    printf("Magic Number:0X%0x\n", ntohl(header->magic));
+    printf("Filesize:%d\n", ntohl(header->filesize));
+
 
     printf("Create db header function completed successfully %d\n", STATUS_SUCCESS);
     return STATUS_SUCCESS;

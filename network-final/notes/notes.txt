@@ -1,0 +1,258 @@
+Project:
+	Integrate the a poll server connection that will allow for connections to automatically connected
+
+
+-----------------------------------------------------------------------------------------
+
+Saved the Makefile 02_12_25
+
+TARGET_SRV = bin/dbserver
+TARGET_CLI = bin/dbcli
+SRC_SRV = $(wildcard src/srv/*.c)
+OBJ_SRV = $(SRC_SRV:src/srv/%.c=obj/srv/%.o)
+
+SRC_CLI = $(wildcard src/cli/*.c)
+OBJ_CLI = $(SRC_CLI:src/cli/%.c=obj/cli/%.o)
+
+run: clean default
+	./$(TARGET_SRV) -f ./mynewdb.db -n -p 8080
+
+default: $(TARGET_SRV) $(TARGET_CLI)
+
+clean:
+	rm -f obj/srv/*.o
+	rm -f bin/*
+	rm -f *.db
+
+$(TARGET_SRV): $(OBJ_SRV)
+	gcc -o $@ $?
+
+$(OBJ_SRV): obj/srv/%.o: src/srv/%.c
+	gcc -c $< -o $@ -Iinclude
+
+$(TARGET_CLI): $(OBJ_CLI)
+	gcc -o $@ $?
+
+$(OBJ_CLI): obj/cli/%.o: src/cli/%.clean
+	gcc -c $< -o $@ -Iinclude
+
+-Makefile backup 02_20_25
+
+TARGET_SRV = bin/dbserver
+TARGET_CLI = bin/dbcli
+
+SRC_SRV = $(wildcard src/srv/*.c)
+OBJ_SRV = $(SRC_SRV:src/srv/%.c=obj/srv/%.o)
+
+SRC_CLI = $(wildcard src/cli/*.c)
+OBJ_CLI = $(SRC_CLI:src/cli/%.c=obj/cli/%.o)
+
+run: clean default
+	./$(TARGET_SRV) -f ./mynewdb.db -n -p 8080
+
+default: $(TARGET_SRV) $(TARGET_CLI)
+
+clean:
+	rm -f obj/srv/*.o
+	rm -f bin/*
+	rm -f *.db
+
+$(TARGET_SRV): $(OBJ_SRV) 
+	gcc -o $@ $(OBJ_SRV) -Iinclude
+
+$(TARGET_CLI): $(OBJ_CLI)
+	gcc -o $@ $(OBJ_CLI) -Iinclude
+
+$(OBJ_SRV): obj/srv/%.o: src/srv/%.c
+	gcc -c $< -o $@ -Iinclude
+
+$(OBJ_CLI): obj/cli/%.o: src/cli/%.c
+	gcc -c $< -o $@ -Iinclude
+
+
+----------------------------------------------------------------------------------------
+
+02_20_25
+-Moved srvpoll.c into src/srv and srvpoll.h into include,
+-Commented out srvpoll.c and srvpoll.h from the main.c,
+-Uncommented the #include and #define import statements for srvpoll.h,
+-Backed up Makefile,
+-Removed CLI target from Makefile,
+-Compiled with error listed in error section,
+
+
+02_24_25
+-Added to src/srv/srvpoll.c void handle_client_fsm(...),
+-Added to src/srv/srvpoll.c #include <poll.h> and #include "common.h",
+-Added to include/srvpoll.h #include "parse.h",
+
+02_25_25
+-Added to src/srv/srvpoll.c added function void handle_client_fsm(...) {...},
+-Added to include/srvpoll.h typedef enum {..., STATE_HELLO, STATE_MSG, STATE_GOODBYE} state_e,
+-Added to include/srvpoll.h void handle_client_fsm(...),
+-Added to include/common.h <stdint.h>,
+-Added to include/common.h typedef enum {MSG_HELLO_REQ, MSG_HELLO_RESP, ...},
+
+02_26_25
+-Uncommented from src/srv/main.c poll_loop(...) { for(...) { if {...} else{handle_client_fsm(...)}}},
+-Commented from src/srv/main.c poll_loop(...) { for(...) {if {...} else{printf(...)}}},
+-Added to src/srv/srvpoll.c void handle_client_fsm() {if (client->state == STATE_HELLO) {...}},
+-Added to src/cli/main.c #include import statements,
+-Added to src/cli/main.c     if (argc != 2) {...}
+
+03_05_35
+-Backed up Makefile into notes/Makefile,
+-Updated Makefile from notes 02_12_25,
+-Updated Makefile to previous script,
+-Updated Makefile TARGET_CLI = bin/dbcli
+
+03_06_25
+-Updated Makefile default: $(TARGET_SRV) $(TARGET_CLI)
+
+03_07_25
+-Updated Makefile removed clean from run: default,
+-Updated Makefile fixed typo OBJ_CLI = $(SRC_CLI:src/cli/%.c=obk/cli/%.o) to OBJ_CLI = $(SRC_CLI:src/cli/%.c=obj/cli/%.o),
+-Updated Makefile moved $(OBJ_SRV): obj/srv/%.o: src/srv/%.c gcc -c $< -o $@ -Iinclude to the bottom of the Makefile,
+-Updated Makefile clean: 	rm -f obj/cli/*.o,
+
+03_10_25
+-Updated Makefile removed bin/dbserver: src/cli/main.c
+	@echo "Error: Cannot build bin/dbserver from src/cli/main.c directly."
+	@exit 1,
+-Commented out from src/cli/main.c // serverInfo.sin_addr.s_addr = in6_addr(argv[1]);,
+-Updated src/cli/main.c serverInfo.sin_addr.s_addr = inet_addr(argv[1]);
+-Commented out from src/cli/main.c // if (connect(fd, (struct socketaddr*)&serverInfo, sizeof(serverInfo)) == -1) {,
+-Updated src/cli/main.c if (connect(fd, (struct sockaddr*)&serverInfo, sizeof(serverInfo)) == -1) {,
+-Commented out from src/cli/main.c dbproto_hdr_t *hdr = buf;,
+-Updated src/cli/main.c dbproto_hdr_t *hdr = (dbproto_hdr_t *)buf;
+
+03_12_25
+-Commented out from src/srv/parse.c header->magic = HEADER_MAGIC;,
+-Updated src/srv/parse.c header->magic = htonl(HEADER_MAGIC);,
+
+03_14_25
+Commented out from src/srv/parse.c dbhdr->version = htons(dbhdr->version);,
+Updated src/srv/parse.c dbhdr->version = htons(dbhdr->version); to dbhdr->version = ntohs(dbhdr->version);,
+Removed from src/srv/parse.c dbhdr->version = ntohs(dbhdr->version); it did not fix failed open_file() bug,
+Commented out from src/srv/parse.c dbhdr->count = htons(dbhdr->count); dbhdr->version = htons(dbhdr->version);,
+
+03_18_25
+Commented out from include/parse.h struct dbheader_t {...},
+Updated include/parse.h struct dbheader_t { uint32_t magic; ...},
+Commented out include/parse.h dbheader_t { uint32_t magic; ...},
+Updated include/parse.h struct dbheader_t {...},
+Updated src/srv/parse.c validate_db_header() { printf(Version after ntohs:...); ...},
+Updated src/srv/parse.c validate_db_header() { printf(Version before ntohs...)},
+Updated src/srv/parse.c validate_db_header() { printf(Version after ntohs...)},
+Commented out src/srv/parse.c create_db_header() { header->version = 0x1;...},
+Updated src/srv/parse.c create_db_header() { header->version = htons(0x1)};,
+Updated src/srv/parse.c #include <inttypes.h>,
+Updated src/srv/parse.c printf("dbstat.st_size %" PRId64 "\n", (int64_t)dbstat.st_size );,
+
+03_25_25
+Updated src/srv/main.c moved the output_file() before an additional validate_db_header() method check,
+Updated src/srv/main.c moved the if (!newfile) {} above the poll() call,
+Commented out src/srv/main.c output() and if(!newfile){},
+Commented out src/srv/parse.c output() {...,  // dbhdr->filesize = htonl(sizeof(struct dbheader_t) + (sizeof(struct employee_t) * realcount));},
+Updated src/srv/parse.c output_file() {...,     struct stat dbstat = {0}; fstat(fd, &dbstat); dbhdr->filesize = htonl(dbstat.st_size)},
+Updated src/srv/parse.c output_file() {...,     // Added for debugging printf("dbstat.st_size %" PRId64 "\n", (int64_t)dbstat.st_size); // Added for debugging printf("filesize before if check %u\n", header->filesize);},
+Commented out src/srv/parse.c validate_db_header() {..., }     // struct stat dbstat = {0}; // fstat(fd, &dbstat);,
+Commented out src/srv/parse.c validate_db_header() {..., // dbhdr->magic = htonl(dbhdr->magic);},
+Updated src/srv/parse.c validate_db_header() {..., dbhdr->magic = ntohl(dbhdr->magic);},
+Updated src/srv/parse.c output_file() { printf("Magic Number:0X%0x\n",dbhdr->magic);},
+
+03_31_25
+Updated src/srv/parse.c validate_db_header() {..., struct stat dbstat = {0}; if(fstat(fd, &dbstat)) {...};...},
+Updated src/srv/parse.c output_file() {... lseek(fd, 0, SEEK_SET); write(fd, dbhdr, sizeof(struct dbheader_t)); ...},
+Updated src/srv/main.c if(!newfile) {lseek(dbfd, 0, SEEK_SET); ...},
+
+04_01_25
+Commented out src/srv/main.c if (validate_db_header(dbfd, &dbhdr) == STATUS_ERROR),
+Commented out src/srv/parse.c output_file() {... // dbhdr->filesize = htonl(dbstat.st_size);},
+Updated src/srv/parse.c output_file() {dbhdr->filesize = dbstat.st_size;},
+Commented out src/srv/parse.c validate_db_header() {... // header->filesize = ntohl(header->filesize);},
+Updated src/srv/parse.c validate_db_header() {... header->filesize = header->filesize;},
+Updated src/srv/parse.c output_file() {... dbhdr->magic = ntohl(dbhdr->magic);},
+Updated src/srv/parse.c output_file() { printf("Magic Number after ntohl conversion output_file():0X%0x\n", dbhdr->magic);},
+
+04_02_25
+Updated src/srv/main.c main() {printf("Magic Number after lseek() and write() output_file():0X%0x\n", dbhdr->magic);},
+Updated src/srv/parse.c validate_db_header() {... printf("Magic Number validate_db_header before if header->magic :0X%0x\n", header->magic)},
+Updated src/srv/parse.c validate_db_header() {... printf("Magic Number validate_db_header after if header->magic :0X%0x\n", header->magic);},
+Commented out src/srv/parse.c validate_db_header() {// header->magic = ntohl(header->magic);},
+Updated src/srv/parse.c validate_db_header() {header->magic = htonl(header->magic);},
+Updated src/srv/parse.c validate_db_header() { header->magic = ntohl(header->magic);},
+Commented out src/srv/main.c // if (validate_db_header(dbfd, &dbhdr) == STATUS_ERROR) {},
+
+04_07_25
+Ran server and received socket: sucess, but the magic number is in the incorrect order,
+Ran xxd mynewdb.db and 00000000: 4441 4c4c 0c00 0000 0100 0000            DALL........,
+
+04_08_25
+Updated src/srv/parse.c output_file() {... dbhdr->magic = ntohl(dbhdr->magic);},
+Updated src/srv/parse.c output_file() {... dbhdr->magic = htonl(dbhdr->magic);},
+
+04_16_25
+Commented out src/srv/parse.c create_db_header() {// header->version = 0x1; ...},
+Updated src/srv/parse.c create_db_header() {header->version = htons(0x1); ...},
+Commented out src/srv/parse.c validate_db_header() {// header->magic = ntohl(header->magic);...},
+Updated src/srv/parse.c validate_db_header() {header->magic = ntohl(header->magic);...},
+Updated src/srv/parse.c output_file() {dbheader->magic = htonl(dbhdr->magic);...},
+
+04_17_25
+Updated src/srv/parse.c create_db_header() { create->filesize = ntohl(sizeof(struct dbheader_t));} to htonl(),
+Updated src/srv/parse.c output_file() {     // // Update the filesize in the dbhdr struct dbhdr->filesize = htonl(dbstat.st_size);},
+Commented src/srv/parse.c create_db_header() {printf("Version:%d\n...)},
+Updated src/srv/parse.c create_db_header() {printf("Create db_header structure values:\n")},
+Commented src/srv/parse.c validate_db_header() { if((header->magic != HEADER_MAGIC))},
+Updated src/srv/parse.c validate_db_header() {if(header->magic != ntohl(HEADER_MAGIC))},
+Commented src/srv/parse.c validate_db_header() {if(header->version != 1)},
+Updated src/srv/parse.c validate_db_header() {if(header->version != 256)},
+Updated src/srv/parse.c validate_db_header() {if(header->version != ntohs(1))},
+Commented src/srv/main.c if(setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)));,
+Updated src/srv/main.c setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));,
+Updated src/srv/main.c poll_loop() { if((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)...},
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------
+Errors
+02_20_25
+richard_vest@LAPTOP-LC92FEIF:~/projects_windows/network/network-final$ make
+rm -f obj/srv/*.o
+rm -f bin/*
+rm -f *.db
+gcc -c src/srv/file.c -o obj/srv/file.o -Iinclude
+gcc -c src/srv/main.c -o obj/srv/main.o -Iinclude
+gcc -c src/srv/parse.c -o obj/srv/parse.o -Iinclude
+src/srv/parse.c: In function ‘read_employees’:
+src/srv/parse.c:55:19: warning: comparison between pointer and integer
+   55 |     if (employees == -1) {
+      |                   ^~
+In file included from src/srv/parse.c:11:
+src/srv/parse.c: In function ‘output_file’:
+include/common.h:4:24: warning: ‘return’ with a value, in function returning void
+    4 | #define STATUS_ERROR   -1
+      |                        ^
+src/srv/parse.c:75:16: note: in expansion of macro ‘STATUS_ERROR’
+   75 |         return STATUS_ERROR;
+      |                ^~~~~~~~~~~~
+src/srv/parse.c:72:6: note: declared here
+   72 | void output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) {
+      |      ^~~~~~~~~~~
+gcc -c src/srv/srvpoll.c -o obj/srv/srvpoll.o -Iinclude
+gcc -o bin/dbserver obj/srv/file.o obj/srv/main.o obj/srv/parse.o obj/srv/srvpoll.o -Iinclude
+./bin/dbserver -f ./mynewdb.db -n -p 8080
+Middle of create_db_header:3
+Create db_header structure values:
+Version:1
+Count:0
+Magic Number:0X4c4c4144
+Filesize:12
+Create db header function completed successfully 0
+socket: No such file or directory
+make: *** [Makefile:7: run] Error 1
